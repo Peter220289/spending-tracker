@@ -77,12 +77,20 @@ def dashboard():
 
     subscriptions = detect_subscriptions(all_transactions)
 
+    monthly_total = sum(s["monthly_estimate"] for s in subscriptions)
+    annual_total = round(monthly_total * 12, 2)
+    by_frequency = defaultdict(list)
+    for s in subscriptions:
+        by_frequency[s["frequency"]].append(s)
+
     return render_template_string(
         DASHBOARD_HTML,
         accounts=accounts,
         cards=cards,
         subscriptions=subscriptions,
-        total_monthly=sum(s["monthly_estimate"] for s in subscriptions),
+        total_monthly=monthly_total,
+        total_annual=annual_total,
+        by_frequency=dict(by_frequency),
     )
 
 
@@ -193,7 +201,20 @@ DASHBOARD_HTML = """
   <h1>Your Subscriptions</h1>
 
   {% if subscriptions %}
-  <p class="total">Estimated monthly cost: &pound;{{ "%.2f"|format(total_monthly) }}</p>
+  <div style="display:flex;gap:16px;margin:1.5rem 0;flex-wrap:wrap">
+    <div style="flex:1;min-width:160px;background:#eff6ff;border-radius:10px;padding:16px 20px">
+      <div style="font-size:0.8rem;color:#3b82f6;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Monthly total</div>
+      <div style="font-size:2rem;font-weight:700;margin-top:4px">&pound;{{ "%.2f"|format(total_monthly) }}</div>
+    </div>
+    <div style="flex:1;min-width:160px;background:#f0fdf4;border-radius:10px;padding:16px 20px">
+      <div style="font-size:0.8rem;color:#16a34a;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Annual total</div>
+      <div style="font-size:2rem;font-weight:700;margin-top:4px">&pound;{{ "%.2f"|format(total_annual) }}</div>
+    </div>
+    <div style="flex:1;min-width:160px;background:#faf5ff;border-radius:10px;padding:16px 20px">
+      <div style="font-size:0.8rem;color:#7c3aed;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Subscriptions found</div>
+      <div style="font-size:2rem;font-weight:700;margin-top:4px">{{ subscriptions|length }}</div>
+    </div>
+  </div>
   <table>
     <thead><tr><th>Merchant</th><th>Frequency</th><th>Avg charge</th><th>Monthly est.</th><th>Seen</th></tr></thead>
     <tbody>
